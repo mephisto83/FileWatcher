@@ -1,0 +1,8 @@
+D:\dev\Visual Studio 2013\Projects\MEPH.util.FileWatcher\MEPH.util.FileWatcher\bin\Debug\MEPH.util.FileWatcher.exe.config
+D:\dev\Visual Studio 2013\Projects\MEPH.util.FileWatcher\MEPH.util.FileWatcher\bin\Debug\MEPH.util.FileWatcher.exe
+D:\dev\Visual Studio 2013\Projects\MEPH.util.FileWatcher\MEPH.util.FileWatcher\bin\Debug\MEPH.util.FileWatcher.pdb
+D:\dev\Visual Studio 2013\Projects\MEPH.util.FileWatcher\MEPH.util.FileWatcher\bin\Debug\Newtonsoft.Json.dll
+D:\dev\Visual Studio 2013\Projects\MEPH.util.FileWatcher\MEPH.util.FileWatcher\bin\Debug\Newtonsoft.Json.xml
+D:\dev\Visual Studio 2013\Projects\MEPH.util.FileWatcher\MEPH.util.FileWatcher\obj\Debug\MEPH.util.FileWatcher.csprojResolveAssemblyReference.cache
+D:\dev\Visual Studio 2013\Projects\MEPH.util.FileWatcher\MEPH.util.FileWatcher\obj\Debug\MEPH.util.FileWatcher.exe
+D:\dev\Visual Studio 2013\Projects\MEPH.util.FileWatcher\MEPH.util.FileWatcher\obj\Debug\MEPH.util.FileWatcher.pdb
