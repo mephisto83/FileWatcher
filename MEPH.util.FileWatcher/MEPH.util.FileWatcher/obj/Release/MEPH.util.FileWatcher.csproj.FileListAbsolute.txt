@@ -5,3 +5,11 @@ D:\dev\Visual Studio 2013\Projects\MEPH.util.FileWatcher\MEPH.util.FileWatcher\b
 D:\dev\Visual Studio 2013\Projects\MEPH.util.FileWatcher\MEPH.util.FileWatcher\bin\Release\Newtonsoft.Json.xml
 D:\dev\Visual Studio 2013\Projects\MEPH.util.FileWatcher\MEPH.util.FileWatcher\obj\Release\MEPH.util.FileWatcher.exe
 D:\dev\Visual Studio 2013\Projects\MEPH.util.FileWatcher\MEPH.util.FileWatcher\obj\Release\MEPH.util.FileWatcher.pdb
+D:\dev\Visual Studio 2013\Projects\FileWatcher\MEPH.util.FileWatcher\MEPH.util.FileWatcher\bin\Release\MEPH.util.FileWatcher.exe.config
+D:\dev\Visual Studio 2013\Projects\FileWatcher\MEPH.util.FileWatcher\MEPH.util.FileWatcher\obj\Release\MEPH.util.FileWatcher.exe
+D:\dev\Visual Studio 2013\Projects\FileWatcher\MEPH.util.FileWatcher\MEPH.util.FileWatcher\obj\Release\MEPH.util.FileWatcher.pdb
+D:\dev\Visual Studio 2013\Projects\FileWatcher\MEPH.util.FileWatcher\MEPH.util.FileWatcher\bin\Release\MEPH.util.FileWatcher.exe
+D:\dev\Visual Studio 2013\Projects\FileWatcher\MEPH.util.FileWatcher\MEPH.util.FileWatcher\bin\Release\MEPH.util.FileWatcher.pdb
+D:\dev\Visual Studio 2013\Projects\FileWatcher\MEPH.util.FileWatcher\MEPH.util.FileWatcher\bin\Release\Newtonsoft.Json.dll
+D:\dev\Visual Studio 2013\Projects\FileWatcher\MEPH.util.FileWatcher\MEPH.util.FileWatcher\bin\Release\Newtonsoft.Json.xml
+D:\dev\Visual Studio 2013\Projects\FileWatcher\MEPH.util.FileWatcher\MEPH.util.FileWatcher\obj\Release\MEPH.util.FileWatcher.csprojResolveAssemblyReference.cache
