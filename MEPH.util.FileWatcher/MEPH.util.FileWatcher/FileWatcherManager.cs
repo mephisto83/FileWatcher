@@ -1,4 +1,5 @@
 ﻿using MEPH.util.FileWatcher.Data;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -23,6 +24,15 @@ namespace MEPH.util.FileWatcher
             }
         }
 
+        State ManagedState
+        {
+            get
+            {
+                if (state == null)
+                    state = new State();
+                return state;
+            }
+        }
         CommandReader reader;
         CommandReader Reader
         {
@@ -35,13 +45,18 @@ namespace MEPH.util.FileWatcher
                 return reader;
             }
         }
-
+        System.Timers.Timer timer;
         private string[] args;
 
         public FileWatcherManager(string[] args)
         {
             // TODO: Complete member initialization
             this.args = args;
+            timer = new System.Timers.Timer(10000);
+            timer.AutoReset = true;
+            timer.Start();
+            timer.Elapsed += timer_Elapsed;
+            timer.Elapsed += WriteState;
 
             if (this.args != null && this.args.Length > 0)
             {
@@ -53,10 +68,118 @@ namespace MEPH.util.FileWatcher
                     Manage(result);
 
                     IsReady = true;
+                    InitSystem();
                 }
             }
         }
 
+        private void InitSystem()
+        {
+            string path = AppDomain.CurrentDomain.BaseDirectory;
+            var fullpath = Path.Combine(path, "filewatch.json");
+            if (File.Exists(fullpath))
+            {
+                using (var stream = File.OpenRead(fullpath))
+                {
+                    var SR = new StreamReader(stream);
+                    var res = SR.ReadToEnd();
+                    var oldstate = JsonConvert.DeserializeObject<State>(res);
+                    foreach (var state in oldstate.States)
+                    {
+                        if (File.Exists(state.FullName))
+                        {
+                            var ft = new FileInfo(state.FullName);
+                            if (state.Ticks != ft.LastWriteTimeUtc.Ticks)
+                            {
+                                WriteLine("Update : " + state.FullName);
+
+                                var config = GetConfig(state.FullName);
+
+                                Backlog.Enqueue(new FileOperation
+                                {
+                                    Name = state.Name,
+                                    Config = config,
+                                    FullPath = state.FullName,
+                                    Path = state.FullName,
+                                    ChangeType = WatcherChangeTypes.Changed,
+                                    FileState = state
+                                });
+                            }
+                        }
+                    }
+                    foreach (var filepath in GetFullPaths().Where(t =>
+                    {
+                        var temp = oldstate.States.FirstOrDefault(x =>
+                        {
+                            return x.FullName == t;
+                        });
+                        return temp == null;
+                    }))
+                    {
+                        var fileiinfo = new FileInfo(filepath);
+                        if (File.Exists(fileiinfo.FullName))
+                        {
+                            var config = GetConfig(fileiinfo.FullName);
+                            Backlog.Enqueue(new FileOperation
+                                            {
+                                                Name = fileiinfo.Name,
+                                                Config = config,
+                                                FullPath = fileiinfo.FullName,
+                                                Path = fileiinfo.FullName,
+                                                ChangeType = WatcherChangeTypes.Created,
+                                                FileState = CreateState(fileiinfo)
+                                            });
+                        }
+                    }
+
+
+                }
+            }
+        }
+
+        void WriteState(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            string json = JsonConvert.SerializeObject(ManagedState);
+
+            string path = AppDomain.CurrentDomain.BaseDirectory;
+            var fullpath = Path.Combine(path, "filewatch.json");
+
+            if (!File.Exists(fullpath))
+            {
+                var stream = File.Create(fullpath);
+
+                stream.Close();
+            }
+            System.IO.File.WriteAllText(fullpath, json);
+
+        }
+
+        void timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            FileOperation OP = null;
+            if (Backlog.Count > 0)
+                OP = Backlog.Peek();
+            while (OP != null)
+            {
+
+                var success = ExecuteConfiguration(OP.Config, OP);
+
+                if (success)
+                {
+                    if (Backlog.Count > 0)
+                        Backlog.Dequeue();
+                    if (Backlog.Count > 0)
+                        OP = Backlog.Peek();
+                    else { OP = null; }
+                }
+                else
+                {
+                    OP = null;
+                }
+            }
+        }
+
+        Queue<FileOperation> Backlog = new Queue<FileOperation>();
         private void Manage(dynamic result)
         {
             var root = result.root;
@@ -101,11 +224,52 @@ namespace MEPH.util.FileWatcher
         void fw_Changed(object sender, FileSystemEventArgs e)
         {
             WriteLine("File watcher witnessed a change.");
-            var config = GetConfig(e);
-            ExecuteConfiguration(config, e);
+            var config = GetConfig(e.FullPath);
+            var file = new FileInfo(e.FullPath);
+            var state = AddToState(file);
+            Backlog.Enqueue(new FileOperation
+            {
+                Config = config,
+                FullPath = e.FullPath,
+                OldFullPath = ((e is System.IO.RenamedEventArgs) ? ((System.IO.RenamedEventArgs)(e)).OldFullPath : null),
+                Path = e.FullPath,
+                Name = e.Name,
+                ChangeType = e.ChangeType,
+                FileState = state
+            });
         }
 
+        private StateOfFile AddToState(FileInfo file)
+        {
+            var state = ManagedState.States.FirstOrDefault(x =>
+            {
+                return x.Ticks == file.CreationTimeUtc.Ticks && file.FullName == x.FullName;
+            });
+
+            if (state == null)
+            {
+                state = CreateState(file);
+
+                ManagedState.States.Add(state);
+            }
+
+            state.LastUpdated = file.LastWriteTimeUtc.Ticks;
+
+            return state;
+        }
+        StateOfFile CreateState(FileInfo file)
+        {
+            var state = new StateOfFile()
+            {
+                Name = file.Name,
+                FullName = file.FullName,
+                Ticks = file.CreationTimeUtc.Ticks,
+                LastUpdated = file.LastWriteTimeUtc.Ticks
+            };
+            return state;
+        }
         public IList<FileSystemWatcher> filewatchers;
+        private State state;
 
         public bool IsReady { get; set; }
 
@@ -114,39 +278,62 @@ namespace MEPH.util.FileWatcher
             Console.WriteLine(text);
         }
 
-        void ExecuteConfiguration(SubConfiguration config, FileSystemEventArgs e)
+        bool ExecuteConfiguration(SubConfiguration config, FileOperation e)
         {
-            if (config != null)
+            var targetpath = string.Empty; ;
+            try
             {
-                var subpath = e.FullPath.Substring(config.FullName.Length);
-                var targetpath = config.FullTarget + subpath;
-                switch (e.ChangeType)
+                if (config != null)
                 {
-                    case System.IO.WatcherChangeTypes.Changed:
-                    case System.IO.WatcherChangeTypes.Created:
-                        Copy(subpath, subpath, config.FullName, config.FullTarget);
-                        break;
-                    case System.IO.WatcherChangeTypes.Renamed:
-                        var oldpath = ((System.IO.RenamedEventArgs)(e)).OldFullPath;
-                        oldpath = oldpath.Substring(config.FullName.Length);
-                        Rename(oldpath, subpath, config.FullName, config.FullTarget, oldpath);
-                        break;
-                    case WatcherChangeTypes.Deleted:
-                        Delete(subpath, subpath, config.FullName, config.FullTarget);
-                        break;
+                    var subpath = e.FullPath.Substring(config.FullName.Length);
+                    targetpath = config.FullTarget + subpath;
+                    switch (e.ChangeType)
+                    {
+                        case System.IO.WatcherChangeTypes.Changed:
+                        case System.IO.WatcherChangeTypes.Created:
+                            Copy(subpath, subpath, config.FullName, config.FullTarget);
+                            break;
+                        case System.IO.WatcherChangeTypes.Renamed:
+                            var oldpath = e.OldFullPath;
+                            oldpath = oldpath.Substring(config.FullName.Length);
+                            Rename(oldpath, subpath, config.FullName, config.FullTarget, oldpath);
+                            break;
+                        case WatcherChangeTypes.Deleted:
+                            Delete(subpath, subpath, config.FullName, config.FullTarget);
+                            break;
+                    }
                 }
             }
+            catch (Exception exception)
+            {
+                WriteLine("Failed to execute operation " + e.ChangeType);
+                return false;
+            }
+            WriteLine("Successfully " + e.ChangeType + " " + targetpath);
+            return true;
         }
 
-        SubConfiguration GetConfig(FileSystemEventArgs e)
+        SubConfiguration GetConfig(string eFullPath)
         {
             var config = Configurations.FirstOrDefault(x =>
             {
                 var dirinfo = new DirectoryInfo(x.Root + x.Folder);
-                return e.FullPath.IndexOf(dirinfo.FullName) == 0;
+                return eFullPath.IndexOf(dirinfo.FullName) == 0;
             });
             return config;
 
+        }
+
+        IList<string> GetFullPaths()
+        {
+            var results = new List<string>();
+            foreach (var x in Configurations)
+            {
+                var dirinfo = new DirectoryInfo(x.Root + x.Folder);
+                String[] allfiles = System.IO.Directory.GetFiles(dirinfo.FullName, "*.*", System.IO.SearchOption.AllDirectories);
+                results.AddRange(allfiles);
+            };
+            return results;
         }
 
         void Rename(string sourceFile, string destFile, string sourcePath, string targetPath, string oldpath)

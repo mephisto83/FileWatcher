@@ -45,11 +45,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CommandReader.cs" />
+    <Compile Include="Data\FileState.cs" />
+    <Compile Include="Data\State.cs" />
     <Compile Include="Data\SubConfiguration.cs" />
     <Compile Include="Extensions.cs" />
+    <Compile Include="Data\FileOperation.cs" />
     <Compile Include="FileWatcherManager.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StateWriter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
